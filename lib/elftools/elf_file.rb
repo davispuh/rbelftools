@@ -386,6 +386,17 @@ module ELFTools
       File.binwrite(filename, all)
     end
 
+    protected
+
+    # Drop parsed state read from the stream, so it is read again lazily.
+    # @return [void]
+    def reset!
+      remove_instance_variable(:@header) if defined?(@header)
+      remove_instance_variable(:@sections) if defined?(@sections)
+      remove_instance_variable(:@segments) if defined?(@segments)
+      remove_instance_variable(:@first_section_header) if defined?(@first_section_header)
+    end
+
     private
 
     # bad idea..

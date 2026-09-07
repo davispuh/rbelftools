@@ -2,6 +2,7 @@
 
 require 'elftools/constants'
 require 'elftools/elf_file'
+require 'elftools/builder'
 require 'elftools/version'
 
 # The ELF parsing tools!

@@ -32,6 +32,7 @@ gem install elftools
 - [x] Supports both big and little endian
 - [x] ELF parser
 - [x] ELF headers patcher
+- [x] ELF builder
 
 See example usage for more details.
 
@@ -341,6 +342,27 @@ relocation.symbol_index = 3
 relocation.type = ELFTools::Constants::R::X86_64::R_X86_64_JUMP_SLOT
 [relocation.symbol_index, relocation.type_name]
 #=> [3, "R_X86_64_JUMP_SLOT"]
+```
+
+## Build
+
+Create ELF file.
+
+```ruby
+entry = 0x1000
+code = [
+  "\xb0\x3c", # mov al, 60
+  "\x0f\x05"  # syscall
+].join
+elf = ELFTools::ELFBuilder.new(machine: :x86_64, type: :dyn, entry: entry)
+elf.add_section('.dynstr', data: "\x00", type: :strtab, flags: [:alloc])
+elf.add_section('.text', data: code, flags: %i[alloc execinstr], addr: entry, offset: entry, align: 64)
+pie = [ELFTools::Constants::DT_FLAGS_1, ELFTools::Constants::DF_1_PIE, ELFTools::Constants::DT_NULL, 0].pack('Q<4')
+elf.add_section('.dynamic', type: :dynamic, data: pie, flags: [:alloc], align: 8, link: '.dynstr')
+abi = [0x00000004, 0x00000010, 0x00000001].pack('L<3') + "GNU\x00" + [0, 4, 4, 0].pack('L<4') # NT_GNU_ABI_TAG Linux 4.4.0
+elf.add_section('.note.ABI-tag', type: :note, data: abi, flags: [:alloc], align: 4)
+elf.add_section('.bss', type: :nobits, size: 64, addr: 0x2000, flags: %i[alloc write])
+elf.save('example')
 ```
 
 # Why rbelftools
